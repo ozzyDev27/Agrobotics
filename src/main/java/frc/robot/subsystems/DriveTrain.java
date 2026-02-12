@@ -25,7 +25,7 @@ public class DriveTrain extends SubsystemBase {
 
         Timer.delay(1);
 
-        navX = new AHRS(SPI.Port.kMXP);
+    navX = new AHRS(Constants.NAVX_PORT);
 
         // Invert right side motors
         rightBack.setInverted(true);

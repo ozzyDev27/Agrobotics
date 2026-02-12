@@ -22,11 +22,10 @@ public class DriveTrain extends SubsystemBase {
         leftFront = new TitanQuad(Constants.TITAN_ID, Constants.LEFT_FRONT);
         rightBack = new TitanQuad(Constants.TITAN_ID, Constants.RIGHT_BACK);
         rightFront = new TitanQuad(Constants.TITAN_ID, Constants.RIGHT_FRONT);
-
         Timer.delay(1);
-
-    navX = new AHRS(Constants.NAVX_PORT);
-
+        
+        navX = new AHRS(Constants.NAVX_PORT);
+        
         // Invert right side motors
         rightBack.setInverted(true);
         rightFront.setInverted(true);
@@ -54,6 +53,10 @@ public class DriveTrain extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // This method will be called once per scheduler run
+        // leftBack.set(3);
+        // leftFront.set(3);
+        // rightBack.set(0);
+        // rightFront.set(0);
+        // System.out.println("hi");
     }
 }

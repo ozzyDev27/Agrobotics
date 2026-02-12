@@ -27,6 +27,7 @@ public class Teleop extends CommandBase {
         double turn = oi.getLeftDriveX();      // Left/right turning
 
         // Drive the robot
+        // System.out.println(oi.getLeftDriveX());
         driveTrain.driveArcade(turn, forward);
     }
 

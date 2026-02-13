@@ -1,6 +1,5 @@
 package frc.robot;
 
-import edu.wpi.first.wpilibj.SPI;
 
 public final class Constants {
     
@@ -10,11 +9,11 @@ public final class Constants {
     public static final int RIGHT_FRONT = 2;
     public static final int RIGHT_BACK = 3;
 
-
-    //sensors
-    public static final SPI.Port NAVX_PORT = SPI.Port.kMXP;
-
     public static final double DEADZONE = 0.06;
-    public static final double MAX_POWER = 0.75;
-    public static final double TURN_GAIN = 0.85;
+
+    private static final double wheelRadius = 62.5;
+    private static final double pulsePerRevolution = 1464;
+    private static final double gearRatio = 1.0;
+    private static final double encoderPulseRatio = pulsePerRevolution * gearRatio;
+    public static final double DIST_PER_TICK = (Math.PI * 2 * wheelRadius) / encoderPulseRatio;
 }

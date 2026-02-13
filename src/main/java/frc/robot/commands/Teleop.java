@@ -32,6 +32,11 @@ public class Teleop extends CommandBase {
     }
 
     @Override
+    public boolean isFinished() {
+        return false;
+    }
+
+    @Override
     public void end(boolean interrupted) {
         // Stop motors when command ends
         driveTrain.driveArcade(0, 0);

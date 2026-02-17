@@ -32,7 +32,7 @@ public class PathRecorder {
     private double accumRightPower;
     private int    accumCount;
 
-    private static final double MIN_SEGMENT_DIST = 5.0;
+    private static final double MIN_SEGMENT_DIST = 50.0;
 
     private boolean replaying = false;
     private int     replayIndex;
@@ -74,9 +74,12 @@ public class PathRecorder {
 
         accumLeft  += dLeft;
         accumRight += dRight;
-        accumLeftPower  += leftPower;
-        accumRightPower += rightPower;
-        accumCount++;
+
+        if (Math.abs(leftPower) > 0.02 || Math.abs(rightPower) > 0.02) {
+            accumLeftPower  += leftPower;
+            accumRightPower += rightPower;
+            accumCount++;
+        }
 
         if (Math.max(Math.abs(accumLeft), Math.abs(accumRight)) >= MIN_SEGMENT_DIST) {
             commitSegment();
@@ -91,8 +94,14 @@ public class PathRecorder {
     }
 
     private void commitSegment() {
-        double avgLeftPower  = accumLeftPower  / accumCount;
-        double avgRightPower = accumRightPower / accumCount;
+        double avgLeftPower, avgRightPower;
+        if (accumCount > 0) {
+            avgLeftPower  = accumLeftPower  / accumCount;
+            avgRightPower = accumRightPower / accumCount;
+        } else {
+            avgLeftPower  = (accumLeft  >= 0) ? 1.0 : -1.0;
+            avgRightPower = (accumRight >= 0) ? 1.0 : -1.0;
+        }
         segments.add(new Segment(accumLeft, accumRight, avgLeftPower, avgRightPower));
         accumLeft  = 0;
         accumRight = 0;
@@ -133,15 +142,15 @@ public class PathRecorder {
             double targetRight = Math.abs(seg.rightDistance);
             double target = Math.max(targetLeft, targetRight);
 
-            if (target < 0.05) {
+            if (target < 0.5) {
                 advanceSegment(currentLeft, currentRight);
                 continue;
             }
 
-            boolean leftDone  = Math.abs(leftTraveled)  >= targetLeft;
-            boolean rightDone = Math.abs(rightTraveled) >= targetRight;
+            double leftProgress  = (targetLeft  > 0.001) ? Math.abs(leftTraveled)  / targetLeft  : 1.0;
+            double rightProgress = (targetRight > 0.001) ? Math.abs(rightTraveled) / targetRight : 1.0;
 
-            if (leftDone && rightDone) {
+            if (leftProgress >= 1.0 && rightProgress >= 1.0) {
                 advanceSegment(currentLeft, currentRight);
                 continue;
             }
@@ -167,8 +176,23 @@ public class PathRecorder {
                 rightOut = rightDir * replaySpeed;
             }
 
-            if (leftDone)  leftOut  = 0;
-            if (rightDone) rightOut = 0;
+            double minPower = 0.15;
+
+            if (leftProgress >= 1.0) {
+                leftOut = 0;
+            } else {
+                double remaining = 1.0 - leftProgress;
+                double ramp = Math.min(remaining * 3.0, 1.0);
+                leftOut = leftOut * Math.max(ramp, minPower / Math.max(Math.abs(leftOut), 0.001));
+            }
+
+            if (rightProgress >= 1.0) {
+                rightOut = 0;
+            } else {
+                double remaining = 1.0 - rightProgress;
+                double ramp = Math.min(remaining * 3.0, 1.0);
+                rightOut = rightOut * Math.max(ramp, minPower / Math.max(Math.abs(rightOut), 0.001));
+            }
 
             return new double[] { leftOut, rightOut };
         }

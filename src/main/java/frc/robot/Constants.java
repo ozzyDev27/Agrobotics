@@ -10,6 +10,7 @@ public final class Constants {
     public static final int RIGHT_BACK = 3;
 
     public static final double DEADZONE = 0.06;
+    public static final double TURN_SCALING = 0.6;
 
     public static final SPI.Port NAVX_PORT = SPI.Port.kMXP;
     public static final double REPLAY_SPEED = 0.5;

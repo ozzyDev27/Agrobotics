@@ -75,11 +75,17 @@ public class DriveTrain extends SubsystemBase {
     }
 
     public void driveArcade(double x, double y) {
-        x = Math.max(-1.0, Math.min(1.0, x));
+        x = Math.max(-1.0, Math.min(1.0, x)) * Constants.TURN_SCALING;
         y = Math.max(-1.0, Math.min(1.0, y));
         
         double left  = y + x;
         double right = y - x;
+
+        double max = Math.max(Math.abs(left), Math.abs(right));
+        if (max > 1.0) {
+            left  /= max;
+            right /= max;
+        }
 
         leftBack.set(left);
         leftFront.set(left);

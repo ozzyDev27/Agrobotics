@@ -11,13 +11,10 @@ import frc.robot.utils.PathRecorder;
 
 public class DriveTrain extends SubsystemBase {
     
-    //Initialize the motors
     private TitanQuad leftBack;
     private TitanQuad leftFront;
     private TitanQuad rightBack;
     private TitanQuad rightFront;
-
-    public AHRS navX;
 
     private TitanQuadEncoder leftBackEncoder;
     private TitanQuadEncoder leftFrontEncoder;
@@ -25,9 +22,7 @@ public class DriveTrain extends SubsystemBase {
     private TitanQuadEncoder rightFrontEncoder;
 
     public AHRS navX = new AHRS(Constants.NAVX_PORT);
-    // Path recording / replay
     private PathRecorder pathRecorder = new PathRecorder();
-    // Track last motor outputs so the recorder can capture them
     private double lastLeftPower  = 0;
     private double lastRightPower = 0;
 
@@ -79,7 +74,6 @@ public class DriveTrain extends SubsystemBase {
         return rightFrontEncoder.getEncoderDistance();
     }
 
-    // Simple arcade drive - x is turn, y is forward/backward
     public void driveArcade(double x, double y) {
         x = Math.max(-1.0, Math.min(1.0, x));
         y = Math.max(-1.0, Math.min(1.0, y));
@@ -87,22 +81,16 @@ public class DriveTrain extends SubsystemBase {
         double left  = y + x;
         double right = y - x;
 
-        // Left side: forward + turn
         leftBack.set(left);
         leftFront.set(left);
         
-        // Right side: forward - turn
         rightBack.set(right);
         rightFront.set(right);
 
-        // Track for path recorder
         lastLeftPower  = left;
         lastRightPower = right;
     }
 
-    /**
-     * Drive left and right sides independently (used during replay).
-     */
     public void driveTank(double left, double right) {
         left  = Math.max(-1.0, Math.min(1.0, left));
         right = Math.max(-1.0, Math.min(1.0, right));
@@ -116,8 +104,6 @@ public class DriveTrain extends SubsystemBase {
         lastRightPower = right;
     }
 
-    // ---- Encoder helpers for left/right averages ----
-
     public double getLeftEncoderDistance() {
         return (leftBackEncoder.getEncoderDistance()
               + leftFrontEncoder.getEncoderDistance()) / 2.0;
@@ -128,13 +114,10 @@ public class DriveTrain extends SubsystemBase {
               + rightFrontEncoder.getEncoderDistance()) / 2.0;
     }
 
-    // ---- Path recording / replay ----
-
-    /** Toggle recording on/off. Returns true if now recording, false if stopped. */
     public boolean toggleRecording() {
         if (pathRecorder.isRecording()) {
             pathRecorder.stopRecording();
-            System.out.println("[PathRecorder] Stopped – " + pathRecorder.getSegmentCount() + " segments saved.");
+            System.out.println("[PathRecorder] Stopped - " + pathRecorder.getSegmentCount() + " segments saved.");
             return false;
         } else {
             pathRecorder.startRecording(getLeftEncoderDistance(), getRightEncoderDistance());
@@ -143,7 +126,6 @@ public class DriveTrain extends SubsystemBase {
         }
     }
 
-    /** Call every loop while the robot is being driven so segments are captured. */
     public void samplePath() {
         if (pathRecorder.isRecording()) {
             pathRecorder.sample(getLeftEncoderDistance(), getRightEncoderDistance(),
@@ -155,10 +137,9 @@ public class DriveTrain extends SubsystemBase {
         return pathRecorder.isRecording();
     }
 
-    /** Start replaying. Does nothing if no path has been recorded. */
     public void startReplay() {
         if (!pathRecorder.hasRecordedPath()) {
-            System.out.println("[PathRecorder] Nothing recorded – cannot replay.");
+            System.out.println("[PathRecorder] Nothing recorded - cannot replay.");
             return;
         }
         pathRecorder.startReplay(getLeftEncoderDistance(), getRightEncoderDistance());
@@ -174,9 +155,6 @@ public class DriveTrain extends SubsystemBase {
         return pathRecorder.isReplaying();
     }
 
-    /**
-     * Advance one replay step. Returns true while still replaying, false when done.
-     */
     public boolean replayStep(double replaySpeed) {
         double[] powers = pathRecorder.replayStep(
                 getLeftEncoderDistance(), getRightEncoderDistance(), replaySpeed);
@@ -189,17 +167,11 @@ public class DriveTrain extends SubsystemBase {
         return true;
     }
 
-    // Reset the gyro heading to zero
     public void resetGyro() {
         navX.zeroYaw();
     }
 
     @Override
     public void periodic() {
-        // leftBack.set(3);
-        // leftFront.set(3);
-        // rightBack.set(0);
-        // rightFront.set(0);
-        // System.out.println("hi");
     }
 }

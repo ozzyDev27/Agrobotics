@@ -1,5 +1,5 @@
 package frc.robot;
-
+import edu.wpi.first.wpilibj.SPI;
 
 public final class Constants {
     
@@ -12,7 +12,6 @@ public final class Constants {
     public static final double DEADZONE = 0.06;
 
     public static final SPI.Port NAVX_PORT = SPI.Port.kMXP;
-    /** Constant speed used during path replay (0.0 – 1.0). */
     public static final double REPLAY_SPEED = 0.5;
 
     private static final double wheelRadius = 62.5;

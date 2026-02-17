@@ -17,23 +17,19 @@ public class Teleop extends CommandBase {
 
     @Override
     public void initialize() {
-        // Reset gyro when teleop starts
         driveTrain.resetGyro();
     }
 
     @Override
     public void execute() {
 
-        // --- X button: toggle path recording on / off ---
         if (oi.getDriveXButton()) {
-            // If we're replaying, cancel replay first
             if (driveTrain.isReplaying()) {
                 driveTrain.stopReplay();
             }
             driveTrain.toggleRecording();
         }
 
-        // --- Y button: start / stop replay ---
         if (oi.getDriveYButton()) {
             if (driveTrain.isReplaying()) {
                 driveTrain.stopReplay();
@@ -42,20 +38,13 @@ public class Teleop extends CommandBase {
             }
         }
 
-        // --- Drive or replay ---
         if (driveTrain.isReplaying()) {
-            // Let the replay drive the motors
-            if (!driveTrain.replayStep(Constants.REPLAY_SPEED)) {
-                // Replay just finished — fall through to normal drive next loop
-            }
+            driveTrain.replayStep(Constants.REPLAY_SPEED);
         } else {
-            // Normal teleop driving
-            double forward = -oi.getLeftDriveY();  // Forward/backward (inverted)
-            double turn = oi.getLeftDriveX();       // Left/right turning
+            double forward = -oi.getLeftDriveY();
+            double turn = oi.getLeftDriveX();
 
             driveTrain.driveArcade(turn, forward);
-
-            // Capture encoder/power data while recording
             driveTrain.samplePath();
         }
     }
@@ -67,7 +56,6 @@ public class Teleop extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        // Stop motors when command ends
         driveTrain.driveArcade(0, 0);
     }
 }

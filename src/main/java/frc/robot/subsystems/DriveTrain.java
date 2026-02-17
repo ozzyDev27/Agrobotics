@@ -81,6 +81,16 @@ public class DriveTrain extends SubsystemBase {
         double left  = y + x;
         double right = y - x;
 
+        if (Math.abs(y) > 0.02) {
+            if (y > 0) {
+                left  = Math.max(left,  0);
+                right = Math.max(right, 0);
+            } else {
+                left  = Math.min(left,  0);
+                right = Math.min(right, 0);
+            }
+        }
+
         double max = Math.max(Math.abs(left), Math.abs(right));
         if (max > 1.0) {
             left  /= max;

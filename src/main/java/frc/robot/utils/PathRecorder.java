@@ -149,8 +149,9 @@ public class PathRecorder {
 
             double leftProgress  = (targetLeft  > 0.001) ? Math.abs(leftTraveled)  / targetLeft  : 1.0;
             double rightProgress = (targetRight > 0.001) ? Math.abs(rightTraveled) / targetRight : 1.0;
+            double overallProgress = Math.max(leftProgress, rightProgress);
 
-            if (leftProgress >= 1.0 && rightProgress >= 1.0) {
+            if (overallProgress >= 0.95) {
                 advanceSegment(currentLeft, currentRight);
                 continue;
             }
@@ -158,41 +159,26 @@ public class PathRecorder {
             double leftDir  = Math.signum(seg.leftPower);
             double rightDir = Math.signum(seg.rightPower);
 
-            double ratio;
-            if (targetLeft > targetRight && targetRight > 0.001) {
-                ratio = targetRight / targetLeft;
-            } else if (targetRight > targetLeft && targetLeft > 0.001) {
-                ratio = targetLeft / targetRight;
+            double absLeft  = Math.abs(seg.leftPower);
+            double absRight = Math.abs(seg.rightPower);
+            double maxPow = Math.max(absLeft, absRight);
+
+            double leftScale, rightScale;
+            if (maxPow > 0.001) {
+                leftScale  = absLeft  / maxPow;
+                rightScale = absRight / maxPow;
             } else {
-                ratio = 1.0;
+                leftScale  = 1.0;
+                rightScale = 1.0;
             }
 
-            double leftOut, rightOut;
-            if (targetLeft >= targetRight) {
-                leftOut  = leftDir  * replaySpeed;
-                rightOut = rightDir * replaySpeed * ratio;
-            } else {
-                leftOut  = leftDir  * replaySpeed * ratio;
-                rightOut = rightDir * replaySpeed;
-            }
+            double leftOut  = leftDir  * replaySpeed * leftScale;
+            double rightOut = rightDir * replaySpeed * rightScale;
 
-            double minPower = 0.15;
-
-            if (leftProgress >= 1.0) {
-                leftOut = 0;
-            } else {
-                double remaining = 1.0 - leftProgress;
-                double ramp = Math.min(remaining * 3.0, 1.0);
-                leftOut = leftOut * Math.max(ramp, minPower / Math.max(Math.abs(leftOut), 0.001));
-            }
-
-            if (rightProgress >= 1.0) {
-                rightOut = 0;
-            } else {
-                double remaining = 1.0 - rightProgress;
-                double ramp = Math.min(remaining * 3.0, 1.0);
-                rightOut = rightOut * Math.max(ramp, minPower / Math.max(Math.abs(rightOut), 0.001));
-            }
+            double ramp = Math.min((1.0 - overallProgress) * 4.0, 1.0);
+            ramp = Math.max(ramp, 0.1);
+            leftOut  *= ramp;
+            rightOut *= ramp;
 
             return new double[] { leftOut, rightOut };
         }

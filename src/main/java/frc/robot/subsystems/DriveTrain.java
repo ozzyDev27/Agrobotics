@@ -75,47 +75,25 @@ public class DriveTrain extends SubsystemBase {
     }
 
     public void driveArcade(double x, double y) {
-        x = Math.max(-1.0, Math.min(1.0, x)) * Constants.TURN_SCALING;
+        x = Math.max(-1.0, Math.min(1.0, x));
         y = Math.max(-1.0, Math.min(1.0, y));
         
         double left  = y + x;
         double right = y - x;
 
-        if (Math.abs(y) > 0.02) {
-            if (y > 0) {
-                left  = Math.max(left,  0);
-                right = Math.max(right, 0);
-            } else {
-                left  = Math.min(left,  0);
-                right = Math.min(right, 0);
-            }
-        }
+        leftBack.set(left);
+        leftFront.set(left);
+        
+        rightBack.set(right);
+        rightFront.set(right);
 
-        double max = Math.max(Math.abs(left), Math.abs(right));
-        if (max > 1.0) {
-            left  /= max;
-            right /= max;
-        }
-
-        setMotors(left, right);
+        lastLeftPower  = left;
+        lastRightPower = right;
     }
 
     public void driveTank(double left, double right) {
         left  = Math.max(-1.0, Math.min(1.0, left));
         right = Math.max(-1.0, Math.min(1.0, right));
-        setMotors(left, right);
-    }
-
-    private void setMotors(double left, double right) {
-        double dLeft  = left  - lastLeftPower;
-        double dRight = right - lastRightPower;
-
-        if (Math.abs(dLeft) > Constants.MAX_SLEW) {
-            left = lastLeftPower + Constants.MAX_SLEW * Math.signum(dLeft);
-        }
-        if (Math.abs(dRight) > Constants.MAX_SLEW) {
-            right = lastRightPower + Constants.MAX_SLEW * Math.signum(dRight);
-        }
 
         leftBack.set(left);
         leftFront.set(left);

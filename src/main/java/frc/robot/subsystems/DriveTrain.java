@@ -87,19 +87,25 @@ public class DriveTrain extends SubsystemBase {
             right /= max;
         }
 
-        leftBack.set(left);
-        leftFront.set(left);
-        
-        rightBack.set(right);
-        rightFront.set(right);
-
-        lastLeftPower  = left;
-        lastRightPower = right;
+        setMotors(left, right);
     }
 
     public void driveTank(double left, double right) {
         left  = Math.max(-1.0, Math.min(1.0, left));
         right = Math.max(-1.0, Math.min(1.0, right));
+        setMotors(left, right);
+    }
+
+    private void setMotors(double left, double right) {
+        double dLeft  = left  - lastLeftPower;
+        double dRight = right - lastRightPower;
+
+        if (Math.abs(dLeft) > Constants.MAX_SLEW) {
+            left = lastLeftPower + Constants.MAX_SLEW * Math.signum(dLeft);
+        }
+        if (Math.abs(dRight) > Constants.MAX_SLEW) {
+            right = lastRightPower + Constants.MAX_SLEW * Math.signum(dRight);
+        }
 
         leftBack.set(left);
         leftFront.set(left);

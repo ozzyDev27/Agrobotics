@@ -7,6 +7,7 @@ import com.studica.frc.TitanQuadEncoder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.utils.PathRecorder;
 
 public class DriveTrain extends SubsystemBase {
     
@@ -22,6 +23,12 @@ public class DriveTrain extends SubsystemBase {
     private TitanQuadEncoder leftFrontEncoder;
     private TitanQuadEncoder rightBackEncoder;
     private TitanQuadEncoder rightFrontEncoder;
+
+    // Path recording / replay
+    private PathRecorder pathRecorder = new PathRecorder();
+    // Track last motor outputs so the recorder can capture them
+    private double lastLeftPower  = 0;
+    private double lastRightPower = 0;
 
     public DriveTrain() { 
         leftBack = new TitanQuad(Constants.TITAN_ID, Constants.LEFT_BACK);
@@ -54,20 +61,131 @@ public class DriveTrain extends SubsystemBase {
     public double getAverageEncoderDistance() {
         return (leftBackEncoder.getEncoderDistance() + leftFrontEncoder.getEncoderDistance() + rightBackEncoder.getEncoderDistance() + rightFrontEncoder.getEncoderDistance()) / 4.0;
     }
- 
+
+    public double leftBackEncoderDistance() {
+        return leftBackEncoder.getEncoderDistance();
+    }
+
+    public double leftFrontEncoderDistance() {
+        return leftFrontEncoder.getEncoderDistance();
+    }
+
+    public double rightBackEncoderDistance() {
+        return rightBackEncoder.getEncoderDistance();
+    }
+
+    public double rightFrontEncoderDistance() {
+        return rightFrontEncoder.getEncoderDistance();
+    }
 
     // Simple arcade drive - x is turn, y is forward/backward
     public void driveArcade(double x, double y) {
         x = Math.max(-1.0, Math.min(1.0, x));
         y = Math.max(-1.0, Math.min(1.0, y));
         
+        double left  = y + x;
+        double right = y - x;
+
         // Left side: forward + turn
-        leftBack.set(y + x);
-        leftFront.set(y + x);
+        leftBack.set(left);
+        leftFront.set(left);
         
         // Right side: forward - turn
-        rightBack.set(y - x);
-        rightFront.set(y - x);
+        rightBack.set(right);
+        rightFront.set(right);
+
+        // Track for path recorder
+        lastLeftPower  = left;
+        lastRightPower = right;
+    }
+
+    /**
+     * Drive left and right sides independently (used during replay).
+     */
+    public void driveTank(double left, double right) {
+        left  = Math.max(-1.0, Math.min(1.0, left));
+        right = Math.max(-1.0, Math.min(1.0, right));
+
+        leftBack.set(left);
+        leftFront.set(left);
+        rightBack.set(right);
+        rightFront.set(right);
+
+        lastLeftPower  = left;
+        lastRightPower = right;
+    }
+
+    // ---- Encoder helpers for left/right averages ----
+
+    public double getLeftEncoderDistance() {
+        return (leftBackEncoder.getEncoderDistance()
+              + leftFrontEncoder.getEncoderDistance()) / 2.0;
+    }
+
+    public double getRightEncoderDistance() {
+        return (rightBackEncoder.getEncoderDistance()
+              + rightFrontEncoder.getEncoderDistance()) / 2.0;
+    }
+
+    // ---- Path recording / replay ----
+
+    /** Toggle recording on/off. Returns true if now recording, false if stopped. */
+    public boolean toggleRecording() {
+        if (pathRecorder.isRecording()) {
+            pathRecorder.stopRecording();
+            System.out.println("[PathRecorder] Stopped – " + pathRecorder.getSegmentCount() + " segments saved.");
+            return false;
+        } else {
+            pathRecorder.startRecording(getLeftEncoderDistance(), getRightEncoderDistance());
+            System.out.println("[PathRecorder] Recording started.");
+            return true;
+        }
+    }
+
+    /** Call every loop while the robot is being driven so segments are captured. */
+    public void samplePath() {
+        if (pathRecorder.isRecording()) {
+            pathRecorder.sample(getLeftEncoderDistance(), getRightEncoderDistance(),
+                                lastLeftPower, lastRightPower);
+        }
+    }
+
+    public boolean isRecording() {
+        return pathRecorder.isRecording();
+    }
+
+    /** Start replaying. Does nothing if no path has been recorded. */
+    public void startReplay() {
+        if (!pathRecorder.hasRecordedPath()) {
+            System.out.println("[PathRecorder] Nothing recorded – cannot replay.");
+            return;
+        }
+        pathRecorder.startReplay(getLeftEncoderDistance(), getRightEncoderDistance());
+        System.out.println("[PathRecorder] Replay started (" + pathRecorder.getSegmentCount() + " segments).");
+    }
+
+    public void stopReplay() {
+        pathRecorder.stopReplay();
+        driveTank(0, 0);
+    }
+
+    public boolean isReplaying() {
+        return pathRecorder.isReplaying();
+    }
+
+    /**
+     * Advance one replay step. Returns true while still replaying, false when done.
+     */
+    public boolean replayStep(double replaySpeed) {
+        double[] powers = pathRecorder.replayStep(
+                getLeftEncoderDistance(), getRightEncoderDistance(), replaySpeed);
+        if (powers == null) {
+            driveTank(0, 0);
+            System.out.println("[PathRecorder] Replay finished.");
+            return false;
+        }
+        driveTank(powers[0], powers[1]);
+        return true;
     }
 
     // Reset the gyro heading to zero

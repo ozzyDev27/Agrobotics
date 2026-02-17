@@ -24,6 +24,7 @@ public class DriveTrain extends SubsystemBase {
     private TitanQuadEncoder rightBackEncoder;
     private TitanQuadEncoder rightFrontEncoder;
 
+    public AHRS navX = new AHRS(Constants.NAVX_PORT);
     // Path recording / replay
     private PathRecorder pathRecorder = new PathRecorder();
     // Track last motor outputs so the recorder can capture them

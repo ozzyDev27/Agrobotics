@@ -48,11 +48,11 @@ public class OI {
     }
 
     public boolean getDriveXButton() {
-        return drivePad.getRawButton(GamepadConstants.SHARE_BUTTON);
+        return drivePad.getRawButtonPressed(GamepadConstants.SHARE_BUTTON);
     }
 
     public boolean getDriveYButton() {
-        return drivePad.getRawButton(GamepadConstants.TRIANGLE_BUTTON);
+        return drivePad.getRawButtonPressed(GamepadConstants.TRIANGLE_BUTTON);
     }
 
     public boolean getDriveBButton() {

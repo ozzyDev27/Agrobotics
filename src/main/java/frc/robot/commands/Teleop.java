@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.robot.Constants;
 import frc.robot.RobotContainer;
 import frc.robot.gamepad.OI;
 import frc.robot.subsystems.DriveTrain;
@@ -22,13 +23,41 @@ public class Teleop extends CommandBase {
 
     @Override
     public void execute() {
-        // Get joystick values
-        double forward = -oi.getLeftDriveY();  // Forward/backward (inverted)
-        double turn = oi.getLeftDriveX();      // Left/right turning
 
-        // Drive the robot
-        // System.out.println(oi.getLeftDriveX());
-        driveTrain.driveArcade(turn, forward);
+        // --- X button: toggle path recording on / off ---
+        if (oi.getDriveXButton()) {
+            // If we're replaying, cancel replay first
+            if (driveTrain.isReplaying()) {
+                driveTrain.stopReplay();
+            }
+            driveTrain.toggleRecording();
+        }
+
+        // --- Y button: start / stop replay ---
+        if (oi.getDriveYButton()) {
+            if (driveTrain.isReplaying()) {
+                driveTrain.stopReplay();
+            } else if (!driveTrain.isRecording()) {
+                driveTrain.startReplay();
+            }
+        }
+
+        // --- Drive or replay ---
+        if (driveTrain.isReplaying()) {
+            // Let the replay drive the motors
+            if (!driveTrain.replayStep(Constants.REPLAY_SPEED)) {
+                // Replay just finished — fall through to normal drive next loop
+            }
+        } else {
+            // Normal teleop driving
+            double forward = -oi.getLeftDriveY();  // Forward/backward (inverted)
+            double turn = oi.getLeftDriveX();       // Left/right turning
+
+            driveTrain.driveArcade(turn, forward);
+
+            // Capture encoder/power data while recording
+            driveTrain.samplePath();
+        }
     }
 
     @Override

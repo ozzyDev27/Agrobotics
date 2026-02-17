@@ -11,6 +11,9 @@ public final class Constants {
 
     public static final double DEADZONE = 0.06;
 
+    /** Constant speed used during path replay (0.0 – 1.0). */
+    public static final double REPLAY_SPEED = 0.5;
+
     private static final double wheelRadius = 62.5;
     private static final double pulsePerRevolution = 1464;
     private static final double gearRatio = 1.0;

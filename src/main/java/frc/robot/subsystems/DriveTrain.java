@@ -117,11 +117,9 @@ public class DriveTrain extends SubsystemBase {
     public boolean toggleRecording() {
         if (pathRecorder.isRecording()) {
             pathRecorder.stopRecording();
-            System.out.println("[PathRecorder] Stopped - " + pathRecorder.getSegmentCount() + " segments saved.");
             return false;
         } else {
             pathRecorder.startRecording(getLeftEncoderDistance(), getRightEncoderDistance());
-            System.out.println("[PathRecorder] Recording started.");
             return true;
         }
     }

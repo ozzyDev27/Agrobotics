@@ -62,8 +62,7 @@ public class PathRecorder {
         return recording;
     }
 
-    public void sample(double currentLeft, double currentRight,
-                       double leftPower, double rightPower) {
+    public void sample(double currentLeft, double currentRight, double leftPower, double rightPower) {
         if (!recording) return;
 
         double dLeft  = currentLeft  - prevLeft;
@@ -112,9 +111,9 @@ public class PathRecorder {
 
     public void startReplay(double currentLeft, double currentRight) {
         if (segments.isEmpty()) return;
-        replaying        = true;
-        replayIndex      = 0;
-        replayLeftStart  = currentLeft;
+        replaying = true;
+        replayIndex = 0;
+        replayLeftStart = currentLeft;
         replayRightStart = currentRight;
     }
 
@@ -132,59 +131,61 @@ public class PathRecorder {
 
     public double[] replayStep(double currentLeft, double currentRight,
                                double replaySpeed) {
-        while (replaying && replayIndex < segments.size()) {
-            Segment seg = segments.get(replayIndex);
-
-            double leftTraveled  = currentLeft  - replayLeftStart;
-            double rightTraveled = currentRight - replayRightStart;
-
-            double targetLeft  = Math.abs(seg.leftDistance);
-            double targetRight = Math.abs(seg.rightDistance);
-            double target = Math.max(targetLeft, targetRight);
-
-            if (target < 0.5) {
-                advanceSegment(currentLeft, currentRight);
-                continue;
-            }
-
-            double leftProgress  = (targetLeft  > 0.001) ? Math.abs(leftTraveled)  / targetLeft  : 1.0;
-            double rightProgress = (targetRight > 0.001) ? Math.abs(rightTraveled) / targetRight : 1.0;
-            double overallProgress = Math.max(leftProgress, rightProgress);
-
-            if (overallProgress >= 0.95) {
-                advanceSegment(currentLeft, currentRight);
-                continue;
-            }
-
-            double leftDir  = Math.signum(seg.leftPower);
-            double rightDir = Math.signum(seg.rightPower);
-
-            double absLeft  = Math.abs(seg.leftPower);
-            double absRight = Math.abs(seg.rightPower);
-            double maxPow = Math.max(absLeft, absRight);
-
-            double leftScale, rightScale;
-            if (maxPow > 0.001) {
-                leftScale  = absLeft  / maxPow;
-                rightScale = absRight / maxPow;
-            } else {
-                leftScale  = 1.0;
-                rightScale = 1.0;
-            }
-
-            double leftOut  = leftDir  * replaySpeed * leftScale;
-            double rightOut = rightDir * replaySpeed * rightScale;
-
-            double ramp = Math.min((1.0 - overallProgress) * 4.0, 1.0);
-            ramp = Math.max(ramp, 0.1);
-            leftOut  *= ramp;
-            rightOut *= ramp;
-
-            return new double[] { leftOut, rightOut };
+        if (!replaying || replayIndex >= segments.size()) {
+            replaying = false;
+            return null;
         }
 
-        replaying = false;
-        return null;
+        Segment seg = segments.get(replayIndex);
+
+        double leftTraveled  = currentLeft  - replayLeftStart;
+        double rightTraveled = currentRight - replayRightStart;
+
+        double targetLeft  = Math.abs(seg.leftDistance);
+        double targetRight = Math.abs(seg.rightDistance);
+        double target = Math.max(targetLeft, targetRight);
+
+        // If the segment is tiny, advance to the next one but still return
+        // a low-power output so we only skip one segment per call.
+        if (target < 0.5) {
+            advanceSegment(currentLeft, currentRight);
+            return new double[] { 0.0, 0.0 };
+        }
+
+        double leftProgress  = (targetLeft  > 0.001) ? Math.abs(leftTraveled)  / targetLeft  : 1.0;
+        double rightProgress = (targetRight > 0.001) ? Math.abs(rightTraveled) / targetRight : 1.0;
+        double overallProgress = Math.max(leftProgress, rightProgress);
+
+        if (overallProgress >= 0.98) {
+            advanceSegment(currentLeft, currentRight);
+            return new double[] { 0.0, 0.0 };
+        }
+
+        double leftDir  = Math.signum(seg.leftPower);
+        double rightDir = Math.signum(seg.rightPower);
+
+        double absLeft  = Math.abs(seg.leftPower);
+        double absRight = Math.abs(seg.rightPower);
+        double maxPow = Math.max(absLeft, absRight);
+
+        double leftScale, rightScale;
+        if (maxPow > 0.001) {
+            leftScale  = absLeft  / maxPow;
+            rightScale = absRight / maxPow;
+        } else {
+            leftScale  = 1.0;
+            rightScale = 1.0;
+        }
+
+        double leftOut  = leftDir  * replaySpeed * leftScale;
+        double rightOut = rightDir * replaySpeed * rightScale;
+
+        double ramp = Math.min((1.0 - overallProgress) * 4.0, 1.0);
+        ramp = Math.max(ramp, 0.1);
+        leftOut  *= ramp;
+        rightOut *= ramp;
+
+        return new double[] { leftOut, rightOut };
     }
 
     private void advanceSegment(double currentLeft, double currentRight) {

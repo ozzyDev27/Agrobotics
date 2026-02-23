@@ -13,6 +13,8 @@ public final class Constants {
 
     public static final SPI.Port NAVX_PORT = SPI.Port.kMXP;
     public static final double REPLAY_SPEED = 1;
+    public static final int NUM_PATHS = 5;
+    public static final int STALL_CHECK_CYCLES = 25;
 
     private static final double wheelRadius = 62.5;
     private static final double pulsePerRevolution = 1464;

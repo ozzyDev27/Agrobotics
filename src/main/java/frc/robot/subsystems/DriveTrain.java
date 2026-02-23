@@ -117,9 +117,11 @@ public class DriveTrain extends SubsystemBase {
     public boolean toggleRecording() {
         if (pathRecorder.isRecording()) {
             pathRecorder.stopRecording();
+            System.out.println("[PathRecorder] Stopped recording path " + (pathRecorder.getCurrentPathIndex() + 1) + " - " + pathRecorder.getSegmentCount() + " segments saved.");
             return false;
         } else {
             pathRecorder.startRecording(getLeftEncoderDistance(), getRightEncoderDistance());
+            System.out.println("[PathRecorder] Recording started on path " + (pathRecorder.getCurrentPathIndex() + 1) + ".");
             return true;
         }
     }
@@ -137,11 +139,11 @@ public class DriveTrain extends SubsystemBase {
 
     public void startReplay() {
         if (!pathRecorder.hasRecordedPath()) {
-            System.out.println("[PathRecorder] Nothing recorded - cannot replay.");
+            System.out.println("[PathRecorder] Nothing recorded on path " + (pathRecorder.getCurrentPathIndex() + 1) + " - cannot replay.");
             return;
         }
         pathRecorder.startReplay(getLeftEncoderDistance(), getRightEncoderDistance());
-        System.out.println("[PathRecorder] Replay started (" + pathRecorder.getSegmentCount() + " segments).");
+        System.out.println("[PathRecorder] Replay started on path " + (pathRecorder.getCurrentPathIndex() + 1) + " (" + pathRecorder.getSegmentCount() + " segments).");
     }
 
     public void stopReplay() {
@@ -158,7 +160,7 @@ public class DriveTrain extends SubsystemBase {
                 getLeftEncoderDistance(), getRightEncoderDistance(), replaySpeed);
         if (powers == null) {
             driveTank(0, 0);
-            System.out.println("[PathRecorder] Replay finished.");
+            System.out.println("[PathRecorder] Replay finished on path " + (pathRecorder.getCurrentPathIndex() + 1) + ".");
             return false;
         }
         driveTank(powers[0], powers[1]);
@@ -167,6 +169,20 @@ public class DriveTrain extends SubsystemBase {
 
     public void resetGyro() {
         navX.zeroYaw();
+    }
+
+    public void nextPath() {
+        pathRecorder.nextPath();
+        System.out.println("[PathRecorder] Switched to path " + (pathRecorder.getCurrentPathIndex() + 1) + " of " + Constants.NUM_PATHS + ".");
+    }
+
+    public void prevPath() {
+        pathRecorder.prevPath();
+        System.out.println("[PathRecorder] Switched to path " + (pathRecorder.getCurrentPathIndex() + 1) + " of " + Constants.NUM_PATHS + ".");
+    }
+
+    public int getCurrentPathIndex() {
+        return pathRecorder.getCurrentPathIndex();
     }
 
     @Override

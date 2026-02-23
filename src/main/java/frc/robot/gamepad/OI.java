@@ -36,7 +36,7 @@ public class OI {
     }
 
     public boolean getDriveRightBumper() {
-        return drivePad.getRawButton(GamepadConstants.RIGHT_BUMPER);
+        return drivePad.getRawButtonPressed(GamepadConstants.RIGHT_BUMPER);
     }
 
     public boolean getDriveLeftTrigger() {
@@ -44,7 +44,7 @@ public class OI {
     }
 
     public boolean getDriveLeftBumper() {
-        return drivePad.getRawButton(GamepadConstants.LEFT_BUMPER);
+        return drivePad.getRawButtonPressed(GamepadConstants.LEFT_BUMPER);
     }
 
     public boolean getDriveXButton() {

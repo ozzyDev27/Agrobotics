@@ -24,7 +24,7 @@ public class OI {
     }
 
     public double getLeftDriveY() {
-        return applyDeadzone(drivePad.getRawAxis(GamepadConstants.LEFT_ANALOG_Y), Constants.DEADZONE);
+        return -applyDeadzone(drivePad.getRawAxis(GamepadConstants.LEFT_ANALOG_Y), Constants.DEADZONE);
     }
 
     public double getLeftDriveX() {

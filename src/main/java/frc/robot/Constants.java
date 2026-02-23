@@ -12,7 +12,7 @@ public final class Constants {
     public static final double DEADZONE = 0.06;
 
     public static final SPI.Port NAVX_PORT = SPI.Port.kMXP;
-    public static final double REPLAY_SPEED = 1;
+    public static final double REPLAY_SPEED = 0.5;
     public static final int NUM_PATHS = 5;
     public static final int STALL_CHECK_CYCLES = 25;
 

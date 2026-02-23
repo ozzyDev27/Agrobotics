@@ -7,41 +7,27 @@ import frc.robot.Constants;
 
 public class PathRecorder {
 
-    public static class Segment {
-        public final double leftDistance;
-        public final double rightDistance;
+    /**
+     * One recorded sample — the motor powers at a single 20ms cycle.
+     */
+    public static class Sample {
         public final double leftPower;
         public final double rightPower;
 
-        public Segment(double leftDistance, double rightDistance, double leftPower, double rightPower) {
-            this.leftDistance  = leftDistance;
-            this.rightDistance = rightDistance;
-            this.leftPower    = leftPower;
-            this.rightPower   = rightPower;
+        public Sample(double leftPower, double rightPower) {
+            this.leftPower  = leftPower;
+            this.rightPower = rightPower;
         }
     }
 
     // Multiple path slots
-    private final List<List<Segment>> paths = new ArrayList<>();
+    private final List<List<Sample>> paths = new ArrayList<>();
     private int currentPathIndex = 0;
 
     private boolean recording = false;
 
-    private double prevLeft;
-    private double prevRight;
-
-    private double accumLeft;
-    private double accumRight;
-    private double accumLeftPower;
-    private double accumRightPower;
-    private int    accumCount;
-
-    private static final double MIN_SEGMENT_DIST = 50.0;
-
     private boolean replaying = false;
     private int     replayIndex;
-    private double  replayLeftStart;
-    private double  replayRightStart;
 
     // Stall detection
     private double stallPrevLeft;
@@ -55,17 +41,17 @@ public class PathRecorder {
         }
     }
 
-    /** Returns the current path slot's segment list. */
-    private List<Segment> currentSegments() {
+    /** Returns the current path slot's sample list. */
+    private List<Sample> currentSamples() {
         return paths.get(currentPathIndex);
     }
 
-    /** Cycles to the next path slot. Cannot cycle while recording or replaying. */
+    /** Cycles to the next path slot. */
     public void nextPath() {
         currentPathIndex = (currentPathIndex + 1) % Constants.NUM_PATHS;
     }
 
-    /** Cycles to the previous path slot. Cannot cycle while recording or replaying. */
+    /** Cycles to the previous path slot. */
     public void prevPath() {
         currentPathIndex = (currentPathIndex - 1 + Constants.NUM_PATHS) % Constants.NUM_PATHS;
     }
@@ -75,22 +61,12 @@ public class PathRecorder {
         return currentPathIndex;
     }
 
-    public void startRecording(double currentLeft, double currentRight) {
-        currentSegments().clear();
-        prevLeft  = currentLeft;
-        prevRight = currentRight;
-        accumLeft = 0;
-        accumRight = 0;
-        accumLeftPower = 0;
-        accumRightPower = 0;
-        accumCount = 0;
+    public void startRecording() {
+        currentSamples().clear();
         recording = true;
     }
 
     public void stopRecording() {
-        if (recording) {
-            flushAccumulator();
-        }
         recording = false;
     }
 
@@ -98,59 +74,18 @@ public class PathRecorder {
         return recording;
     }
 
-    public void sample(double currentLeft, double currentRight, double leftPower, double rightPower) {
+    /**
+     * Records one cycle's motor powers. Called every 20ms while recording.
+     */
+    public void sample(double leftPower, double rightPower) {
         if (!recording) return;
-
-        double dLeft  = currentLeft  - prevLeft;
-        double dRight = currentRight - prevRight;
-
-        prevLeft  = currentLeft;
-        prevRight = currentRight;
-
-        accumLeft  += dLeft;
-        accumRight += dRight;
-
-        if (Math.abs(leftPower) > 0.02 || Math.abs(rightPower) > 0.02) {
-            accumLeftPower  += leftPower;
-            accumRightPower += rightPower;
-            accumCount++;
-        }
-
-        if (Math.max(Math.abs(accumLeft), Math.abs(accumRight)) >= MIN_SEGMENT_DIST) {
-            commitSegment();
-        }
-    }
-
-    private void flushAccumulator() {
-        if (accumCount > 0 &&
-            (Math.abs(accumLeft) > 0.01 || Math.abs(accumRight) > 0.01)) {
-            commitSegment();
-        }
-    }
-
-    private void commitSegment() {
-        double avgLeftPower, avgRightPower;
-        if (accumCount > 0) {
-            avgLeftPower  = accumLeftPower  / accumCount;
-            avgRightPower = accumRightPower / accumCount;
-        } else {
-            avgLeftPower  = (accumLeft  >= 0) ? 1.0 : -1.0;
-            avgRightPower = (accumRight >= 0) ? 1.0 : -1.0;
-        }
-        currentSegments().add(new Segment(accumLeft, accumRight, avgLeftPower, avgRightPower));
-        accumLeft  = 0;
-        accumRight = 0;
-        accumLeftPower  = 0;
-        accumRightPower = 0;
-        accumCount = 0;
+        currentSamples().add(new Sample(leftPower, rightPower));
     }
 
     public void startReplay(double currentLeft, double currentRight) {
-        if (currentSegments().isEmpty()) return;
+        if (currentSamples().isEmpty()) return;
         replaying = true;
         replayIndex = 0;
-        replayLeftStart = currentLeft;
-        replayRightStart = currentRight;
         stallPrevLeft  = currentLeft;
         stallPrevRight = currentRight;
         stallCounter   = 0;
@@ -165,7 +100,7 @@ public class PathRecorder {
     }
 
     public boolean hasRecordedPath() {
-        return !currentSegments().isEmpty();
+        return !currentSamples().isEmpty();
     }
 
     /**
@@ -188,9 +123,12 @@ public class PathRecorder {
         return stallCounter >= Constants.STALL_CHECK_CYCLES;
     }
 
-    public double[] replayStep(double currentLeft, double currentRight,
-                               double replaySpeed) {
-        if (!replaying || replayIndex >= currentSegments().size()) {
+    /**
+     * Returns the next sample's motor powers, or null if the replay is done.
+     * Called once per 20ms cycle — plays back in real time.
+     */
+    public double[] replayStep(double currentLeft, double currentRight) {
+        if (!replaying || replayIndex >= currentSamples().size()) {
             replaying = false;
             return null;
         }
@@ -198,71 +136,20 @@ public class PathRecorder {
         // Stall check: if the robot is trying to drive but the encoders
         // haven't changed, stop and return null.
         if (replayIndex > 0 && checkStall(currentLeft, currentRight)) {
-            System.out.println("[PathRecorder] STALL DETECTED on path " + (currentPathIndex + 1) + " at segment " + replayIndex + " - stopping replay.");
+            System.out.println("[PathRecorder] STALL DETECTED on path " + (currentPathIndex + 1)
+                    + " at sample " + replayIndex + " - stopping replay.");
             replaying = false;
             return null;
         }
 
-        Segment seg = currentSegments().get(replayIndex);
-
-        double leftTraveled  = currentLeft  - replayLeftStart;
-        double rightTraveled = currentRight - replayRightStart;
-
-        double targetLeft  = Math.abs(seg.leftDistance);
-        double targetRight = Math.abs(seg.rightDistance);
-        double target = Math.max(targetLeft, targetRight);
-
-        // If the segment is tiny, advance to the next one but still return
-        // a low-power output so we only skip one segment per call.
-        if (target < 0.5) {
-            advanceSegment(currentLeft, currentRight);
-            return new double[] { 0.0, 0.0 };
-        }
-
-        double leftProgress  = (targetLeft  > 0.001) ? Math.abs(leftTraveled)  / targetLeft  : 1.0;
-        double rightProgress = (targetRight > 0.001) ? Math.abs(rightTraveled) / targetRight : 1.0;
-        double overallProgress = Math.max(leftProgress, rightProgress);
-
-        if (overallProgress >= 0.98) {
-            advanceSegment(currentLeft, currentRight);
-            return new double[] { 0.0, 0.0 };
-        }
-
-        double leftDir  = Math.signum(seg.leftPower);
-        double rightDir = Math.signum(seg.rightPower);
-
-        double absLeft  = Math.abs(seg.leftPower);
-        double absRight = Math.abs(seg.rightPower);
-        double maxPow = Math.max(absLeft, absRight);
-
-        double leftScale, rightScale;
-        if (maxPow > 0.001) {
-            leftScale  = absLeft  / maxPow;
-            rightScale = absRight / maxPow;
-        } else {
-            leftScale  = 1.0;
-            rightScale = 1.0;
-        }
-
-        double leftOut  = leftDir  * replaySpeed * leftScale;
-        double rightOut = rightDir * replaySpeed * rightScale;
-
-        double ramp = Math.min((1.0 - overallProgress) * 4.0, 1.0);
-        ramp = Math.max(ramp, 0.1);
-        leftOut  *= ramp;
-        rightOut *= ramp;
-
-        return new double[] { leftOut, rightOut };
-    }
-
-    private void advanceSegment(double currentLeft, double currentRight) {
+        Sample s = currentSamples().get(replayIndex);
         replayIndex++;
-        replayLeftStart  = currentLeft;
-        replayRightStart = currentRight;
+
+        return new double[] { s.leftPower, s.rightPower };
     }
 
-    public int getSegmentCount() {
-        return currentSegments().size();
+    public int getSampleCount() {
+        return currentSamples().size();
     }
 
     public int getReplayIndex() {

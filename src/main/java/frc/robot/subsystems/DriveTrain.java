@@ -117,10 +117,10 @@ public class DriveTrain extends SubsystemBase {
     public boolean toggleRecording() {
         if (pathRecorder.isRecording()) {
             pathRecorder.stopRecording();
-            System.out.println("[PathRecorder] Stopped recording path " + (pathRecorder.getCurrentPathIndex() + 1) + " - " + pathRecorder.getSegmentCount() + " segments saved.");
+            System.out.println("[PathRecorder] Stopped recording path " + (pathRecorder.getCurrentPathIndex() + 1) + " - " + pathRecorder.getSampleCount() + " samples saved.");
             return false;
         } else {
-            pathRecorder.startRecording(getLeftEncoderDistance(), getRightEncoderDistance());
+            pathRecorder.startRecording();
             System.out.println("[PathRecorder] Recording started on path " + (pathRecorder.getCurrentPathIndex() + 1) + ".");
             return true;
         }
@@ -128,8 +128,7 @@ public class DriveTrain extends SubsystemBase {
 
     public void samplePath() {
         if (pathRecorder.isRecording()) {
-            pathRecorder.sample(getLeftEncoderDistance(), getRightEncoderDistance(),
-                                lastLeftPower, lastRightPower);
+            pathRecorder.sample(lastLeftPower, lastRightPower);
         }
     }
 
@@ -143,7 +142,7 @@ public class DriveTrain extends SubsystemBase {
             return;
         }
         pathRecorder.startReplay(getLeftEncoderDistance(), getRightEncoderDistance());
-        System.out.println("[PathRecorder] Replay started on path " + (pathRecorder.getCurrentPathIndex() + 1) + " (" + pathRecorder.getSegmentCount() + " segments).");
+        System.out.println("[PathRecorder] Replay started on path " + (pathRecorder.getCurrentPathIndex() + 1) + " (" + pathRecorder.getSampleCount() + " samples).");
     }
 
     public void stopReplay() {
@@ -155,9 +154,9 @@ public class DriveTrain extends SubsystemBase {
         return pathRecorder.isReplaying();
     }
 
-    public boolean replayStep(double replaySpeed) {
+    public boolean replayStep() {
         double[] powers = pathRecorder.replayStep(
-                getLeftEncoderDistance(), getRightEncoderDistance(), replaySpeed);
+                getLeftEncoderDistance(), getRightEncoderDistance());
         if (powers == null) {
             driveTank(0, 0);
             System.out.println("[PathRecorder] Replay finished on path " + (pathRecorder.getCurrentPathIndex() + 1) + ".");

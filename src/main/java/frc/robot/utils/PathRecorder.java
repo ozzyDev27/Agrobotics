@@ -42,9 +42,7 @@ public class PathRecorder {
         for (int i = 0; i < Constants.NUM_PATHS; i++) {
             paths.add(new ArrayList<>());
         }
-        // Create the paths directory if it doesn't exist
         new File(PATHS_DIR).mkdirs();
-        // Load any saved paths from disk
         loadAllPaths();
     }
 
@@ -128,8 +126,6 @@ public class PathRecorder {
 
         Sample s = currentSamples().get(replayIndex);
 
-        // Stall check: only check if the robot is actually being told to move.
-        // If both powers are near zero, the robot is intentionally stationary.
         boolean commanding = Math.abs(s.leftPower) > 0.05 || Math.abs(s.rightPower) > 0.05;
         if (replayIndex > 0 && commanding && checkStall(currentLeft, currentRight)) {
             System.out.println("Stall detected on path " + (currentPathIndex + 1)
@@ -138,7 +134,6 @@ public class PathRecorder {
             return null;
         }
 
-        // Reset stall counter when not commanding movement
         if (!commanding) {
             stallCounter = 0;
             stallPrevLeft  = currentLeft;
@@ -154,7 +149,6 @@ public class PathRecorder {
         return currentSamples().size();
     }
 
-    /** Returns the duration of the current path in seconds (each sample = 20ms). */
     public double getPathDuration() {
         return currentSamples().size() * 0.02;
     }
@@ -163,13 +157,10 @@ public class PathRecorder {
         return replayIndex;
     }
 
-    // ---- File I/O ----
-
     private String pathFile(int index) {
         return PATHS_DIR + "/path_" + (index + 1) + ".json";
     }
 
-    /** Saves a single path slot to a JSON file. */
     public void savePath(int index) {
         List<Sample> samples = paths.get(index);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(pathFile(index)))) {
@@ -186,7 +177,6 @@ public class PathRecorder {
         }
     }
 
-    /** Loads a single path slot from a JSON file, if it exists. */
     public void loadPath(int index) {
         File file = new File(pathFile(index));
         if (!file.exists()) return;
@@ -202,13 +192,11 @@ public class PathRecorder {
             }
             String json = sb.toString().trim();
 
-            // Strip outer brackets
             if (json.startsWith("[")) json = json.substring(1);
             if (json.endsWith("]"))   json = json.substring(0, json.length() - 1);
 
             if (json.isEmpty()) return;
 
-            // Parse each [left,right] pair
             int i = 0;
             while (i < json.length()) {
                 int open = json.indexOf('[', i);
@@ -232,7 +220,6 @@ public class PathRecorder {
         }
     }
 
-    /** Loads all path slots from disk. Called on startup. */
     private void loadAllPaths() {
         for (int i = 0; i < Constants.NUM_PATHS; i++) {
             loadPath(i);

@@ -22,7 +22,6 @@ public class Teleop extends CommandBase {
     @Override
     public void execute() {
 
-        // Cycle through path slots with bumpers (only when not recording or replaying)
         if (!driveTrain.isRecording() && !driveTrain.isReplaying()) {
             if (oi.getDriveLeftBumper()) {
                 driveTrain.prevPath();

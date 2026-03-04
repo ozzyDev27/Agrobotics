@@ -13,7 +13,6 @@ public class RobotContainer {
     driveTrain = new DriveTrain();
     oi = new OI();
     
-    // Set default command for drivetrain
     driveTrain.setDefaultCommand(new Teleop());
   }
 }

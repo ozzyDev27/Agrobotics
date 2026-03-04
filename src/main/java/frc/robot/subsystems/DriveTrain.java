@@ -117,7 +117,7 @@ public class DriveTrain extends SubsystemBase {
     public boolean toggleRecording() {
         if (pathRecorder.isRecording()) {
             pathRecorder.stopRecording();
-            System.out.println("[PathRecorder] Stopped recording path " + (pathRecorder.getCurrentPathIndex() + 1) + " - " + pathRecorder.getSampleCount() + " samples saved.");
+            System.out.println("[PathRecorder] Stopped recording path " + (pathRecorder.getCurrentPathIndex() + 1) + " - " + pathRecorder.getSampleCount() + " samples recorded at a total of " + String.format("%.1f", pathRecorder.getPathDuration()) + " seconds.");
             return false;
         } else {
             pathRecorder.startRecording();
@@ -172,12 +172,12 @@ public class DriveTrain extends SubsystemBase {
 
     public void nextPath() {
         pathRecorder.nextPath();
-        System.out.println("[PathRecorder] Switched to path " + (pathRecorder.getCurrentPathIndex() + 1) + " of " + Constants.NUM_PATHS + ".");
+        System.out.println("[PathRecorder] Switched to path " + (pathRecorder.getCurrentPathIndex() + 1) + " of " + Constants.NUM_PATHS + " with a time of " + String.format("%.1f", pathRecorder.getPathDuration()) + " seconds.");
     }
 
     public void prevPath() {
         pathRecorder.prevPath();
-        System.out.println("[PathRecorder] Switched to path " + (pathRecorder.getCurrentPathIndex() + 1) + " of " + Constants.NUM_PATHS + ".");
+        System.out.println("[PathRecorder] Switched to path " + (pathRecorder.getCurrentPathIndex() + 1) + " of " + Constants.NUM_PATHS + " with a time of " + String.format("%.1f", pathRecorder.getPathDuration()) + " seconds.");
     }
 
     public int getCurrentPathIndex() {
